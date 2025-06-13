@@ -5,8 +5,8 @@ import streamlit as st
 def get():
     url = "https://10.128.1.78:5555/hello"
     cert = ('certificate.crt', 'private.key')
-    response = requests.get(url=url,cert=cert, verify='certificate.crt')
-    return response.status_code
+    response = requests.get(url=url,cert=cert, verify=False)
+    return response.json()
 
 def page1():
     st.title("Troca de mensagens")
