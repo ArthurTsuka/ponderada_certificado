@@ -4,14 +4,16 @@ import streamlit as st
 
 def get():
     url = "https://10.128.1.78:5555/hello"
-    s = requests.Session()
-    s.cert = 'certificate.crt'
-    response = requests.get(url=url, cert="certificate.crt")
+    cert = ('certificate.crt', 'private.key')
+    response = requests.get(url=url,cert=cert, verify='certificate.crt')
     return response.status_code
 
 def page1():
     st.title("Troca de mensagens")
-    st.chat_input("Escreva algo")
+    mensagem = st.chat_input("Escreva algo")
+    if mensagem:
+        st.write(mensagem)
+
 
 def page2():
     st.title("testar get")
