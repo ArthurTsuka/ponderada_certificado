@@ -1,21 +1,12 @@
 import requests
-import streamlit as st
-import json
-from datetime import datetime
-import ssl
-import OpenSSL.crypto
 import logging
+import OpenSSL.crypto
+from pathlib import Path
+import os
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Configuração da página
-st.set_page_config(
-    page_title="Demonstração SSL/TLS",
-    page_icon="🔒",
-    layout="wide"
-)
 
 def get_certificate_info(cert_path):
     """Extrai informações do certificado SSL."""
@@ -36,45 +27,42 @@ def get_certificate_info(cert_path):
         logger.error(f"Erro ao ler certificado: {e}")
         return None
 
+def get_cert_paths():
+    """Retorna os caminhos dos certificados."""
+    # Tenta encontrar os certificados em diferentes locais possíveis
+    possible_paths = [
+        # Caminho relativo ao diretório atual
+        Path("certificates"),
+        # Caminho relativo ao diretório do script
+        Path(__file__).parent.parent / "certificates",
+        # Caminho absoluto (se fornecido via variável de ambiente)
+        Path(os.getenv("SSL_CERT_DIR", "certificates"))
+    ]
+    
+    for base_path in possible_paths:
+        cert_path = base_path / "certificate.crt"
+        key_path = base_path / "private.key"
+        if cert_path.exists() and key_path.exists():
+            return str(cert_path), str(key_path)
+            
+    raise FileNotFoundError("Certificados SSL não encontrados. Certifique-se de que os arquivos certificate.crt e private.key estão na pasta 'certificates'.")
+
 def get(endpoint='/'):
     """Faz uma requisição HTTPS para o servidor."""
     try:
         url = f"https://localhost:5555{endpoint}"
-        cert = ('certificate.crt', 'private.key')
+        cert_path, key_path = get_cert_paths()
+        
         response = requests.get(
             url=url,
-            cert=cert,
+            cert=(cert_path, key_path),
             verify=False,  # Em produção, isso deve ser True
             timeout=10
         )
         return response.json()
+    except FileNotFoundError as e:
+        logger.error(f"Erro com certificados: {e}")
+        return {"error": str(e)}
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro na requisição: {e}")
-        return {"error": str(e)}
-
-st.title("🔒 Demonstração de Segurança SSL/TLS")
-    
-st.markdown("""
-    ### Como funciona o SSL/TLS?
-    
-    1. **Handshake TLS**
-       - O cliente envia um "Client Hello"
-       - O servidor responde com um "Server Hello" e seu certificado
-       - Ambos concordam com os parâmetros de criptografia
-    
-    2. **Verificação do Certificado**
-       - O certificado do servidor é verificado
-       - A identidade do servidor é confirmada
-    
-    3. **Estabelecimento da Conexão Segura**
-       - Uma chave de sessão é gerada
-       - Toda comunicação subsequente é criptografada
-    """)
-    
-    # Mostrar informações do certificado
-st.subheader("📜 Informações do Certificado")
-cert_info = get_certificate_info('./certificates/certificate.crt')
-if cert_info:
-    st.json(cert_info)
-else:
-    st.error("Não foi possível ler o certificado")
+        return {"error": str(e)} 
