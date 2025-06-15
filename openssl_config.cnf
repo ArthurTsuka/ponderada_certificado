@@ -1,0 +1,25 @@
+[ req ]
+default_bits = 2048
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
+
+[ dn ]
+C = BR
+ST = Sao Paulo
+L = Sao Paulo
+O = Minha Empresa de Testes
+OU = Desenvolvimento
+CN = 172.20.10.9
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+IP.1 = 172.20.10.9  # <-- SEU IP AQUI!
+# Se você também quisesse localhost, adicionaria:
+# IP.2 = 127.0.0.1
+# DNS.1 = localhost
+# E se tivesse um nome de domínio local:
+# DNS.2 = meuapp.local
